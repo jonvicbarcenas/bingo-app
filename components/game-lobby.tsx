@@ -81,6 +81,80 @@ export default function GameLobby({ onJoinGame }: GameLobbyProps) {
     }
   }
 
+  const handleCreateNewGame = async () => {
+    setLoading(true)
+    setError("")
+
+    try {
+      Swal.fire({
+        title: "Creating new game...",
+        text: "Please wait",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading()
+        },
+        background: "rgba(30, 20, 60, 0.95)",
+        color: "#e9d5ff",
+      })
+
+      const response = await fetch("/api/bingo/newgame")
+      const data = await response.json()
+
+      console.log("[v0] Create game response:", data)
+
+      if (!response.ok || !data.bcode) {
+        setLoading(false)
+        Swal.close()
+        Swal.fire({
+          icon: "error",
+          title: "Creation Failed",
+          text: data.error || "Failed to create new game",
+          timer: 2500,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          background: "rgba(30, 20, 60, 0.95)",
+          color: "#e9d5ff",
+        })
+        return
+      }
+
+      // Set the game code and show success
+      setGameCode(data.bcode)
+      Swal.close()
+      
+      Swal.fire({
+        icon: "success",
+        title: "Game Created!",
+        html: `Your game code is: <strong class="text-primary text-xl">${data.bcode}</strong>`,
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        background: "rgba(30, 20, 60, 0.95)",
+        color: "#e9d5ff",
+        iconColor: "#10b981",
+      })
+
+      // Automatically join the game after a short delay
+      setTimeout(() => {
+        onJoinGame(data.bcode)
+      }, 2000)
+    } catch (err) {
+      console.log("[v0] Create game error:", err)
+      setLoading(false)
+      Swal.close()
+      Swal.fire({
+        icon: "error",
+        title: "Connection Error",
+        text: "Failed to connect to game server",
+        timer: 2500,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        background: "rgba(30, 20, 60, 0.95)",
+        color: "#e9d5ff",
+      })
+    }
+  }
+
   return (
     <div className="flex items-center justify-center min-h-screen px-4 relative">
       <div className="w-full max-w-md relative z-10">
@@ -156,7 +230,25 @@ export default function GameLobby({ onJoinGame }: GameLobbyProps) {
               className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all"
             >
               {loading ? "Connecting..." : "Join Game"}
-              </Button>
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleCreateNewGame}
+              disabled={loading}
+              variant="outline"
+              className="w-full py-6 text-lg font-semibold bg-transparent hover:bg-primary/10 transition-all"
+            >
+              {loading ? "Creating..." : "Create New Game"}
+            </Button>
               </div>
             </Card>
           </ShineBorder>

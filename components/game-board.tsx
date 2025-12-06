@@ -21,7 +21,7 @@ export default function GameBoard({ gameCode, onExit }: GameBoardProps) {
   const [cards, setCards] = useState<CardData[]>([])
   const [markedCells, setMarkedCells] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
-  const [winningCard, setWinningCard] = useState<string | null>(null)
+  const [winningCards, setWinningCards] = useState<Array<{token: string, index: number}>>([])
   const [error, setError] = useState("")
 
   // Fetch bingo card when component mounts
@@ -86,21 +86,45 @@ export default function GameBoard({ gameCode, onExit }: GameBoardProps) {
     setMarkedCells(newMarked)
   }
 
-  const handleCheckWin = async (cardToken: string) => {
+  const handleCheckWin = async () => {
     try {
-      const response = await fetch(`/api/bingo/checkwin?playcard_token=${cardToken}`)
-      const result = await response.json()
+      // Show loading state
+      Swal.fire({
+        title: "Checking all cards...",
+        text: "Please wait",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading()
+        },
+        background: "rgba(30, 20, 60, 0.95)",
+        color: "#e9d5ff",
+      })
 
-      console.log("[v0] Win check result:", result)
+      // Check all cards simultaneously
+      const checkPromises = cards.map(async (card, index) => {
+        const response = await fetch(`/api/bingo/checkwin?playcard_token=${card.token}`)
+        const result = await response.json()
+        console.log(`[v0] Win check for card ${index + 1}:`, result)
+        return {
+          token: card.token,
+          index: index,
+          isWinner: result.result === "1"
+        }
+      })
 
-      if (result.result === "1") {
-        setWinningCard(cardToken)
+      const results = await Promise.all(checkPromises)
+      const winners = results.filter(r => r.isWinner).map(r => ({ token: r.token, index: r.index }))
+
+      Swal.close()
+
+      if (winners.length > 0) {
+        setWinningCards(winners)
       } else {
         // Show SweetAlert that auto-dismisses after 2 seconds
         Swal.fire({
           icon: "info",
           title: "Not yet!",
-          text: "Not a winning card yet! Keep playing.",
+          text: "No winning cards yet! Keep playing.",
           timer: 2000,
           timerProgressBar: true,
           showConfirmButton: false,
@@ -111,6 +135,7 @@ export default function GameBoard({ gameCode, onExit }: GameBoardProps) {
       }
     } catch (err) {
       console.log("[v0] Win check error:", err)
+      Swal.close()
       // Show error SweetAlert
       Swal.fire({
         icon: "error",
@@ -174,7 +199,7 @@ export default function GameBoard({ gameCode, onExit }: GameBoardProps) {
           </Button>
           {cards.length > 0 && (
             <Button
-              onClick={() => handleCheckWin(cards[0].token)}
+              onClick={handleCheckWin}
               className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90"
             >
               Check for Win
@@ -199,6 +224,7 @@ export default function GameBoard({ gameCode, onExit }: GameBoardProps) {
                 markedCells={markedCells}
                 onMarkCell={handleMarkCell}
                 cardIndex={idx}
+                cardToken={card.token}
               />
             ))}
           </div>
@@ -206,7 +232,13 @@ export default function GameBoard({ gameCode, onExit }: GameBoardProps) {
       </div>
 
       {/* Win Modal */}
-      {winningCard && <WinModal onClose={() => setWinningCard(null)} onPlayAgain={onExit} />}
+      {winningCards.length > 0 && (
+        <WinModal 
+          winningCards={winningCards} 
+          onClose={() => setWinningCards([])} 
+          onPlayAgain={onExit} 
+        />
+      )}
     </div>
   )
 }
