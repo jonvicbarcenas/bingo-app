@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
 interface WinModalProps {
+  winningCards: Array<{token: string, index: number}>
   onClose: () => void
   onPlayAgain: () => void
 }
 
-export default function WinModal({ onClose, onPlayAgain }: WinModalProps) {
+export default function WinModal({ winningCards, onClose, onPlayAgain }: WinModalProps) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -35,7 +36,24 @@ export default function WinModal({ onClose, onPlayAgain }: WinModalProps) {
               BINGO!
             </h2>
 
-            <p className="text-muted-foreground mb-8 text-lg">You won! Congratulations on your winning card.</p>
+            <p className="text-muted-foreground mb-6 text-lg">
+              You won! Congratulations on your winning card{winningCards.length > 1 ? "s" : ""}.
+            </p>
+            
+            {/* Display winning cards */}
+            <div className="mb-6 space-y-2">
+              <p className="text-sm font-semibold text-foreground mb-3">
+                Winning Card{winningCards.length > 1 ? "s" : ""}:
+              </p>
+              {winningCards.map((card) => (
+                <div key={card.token} className="bg-primary/10 rounded-lg p-3 border border-primary/30">
+                  <div className="font-semibold text-primary">Card {card.index + 1}</div>
+                  <div className="text-xs font-mono text-muted-foreground break-all">
+                    {card.token}
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {/* Confetti-like dots */}
             <div className="flex justify-center gap-2 mb-8">

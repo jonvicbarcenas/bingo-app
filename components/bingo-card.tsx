@@ -8,11 +8,12 @@ interface BingoCardProps {
   markedCells: Set<string>
   onMarkCell: (cellKey: string) => void
   cardIndex: number
+  cardToken: string
 }
 
 const BINGO_LETTERS = ["B", "I", "N", "G", "O"]
 
-export default function BingoCard({ numbers, markedCells, onMarkCell, cardIndex }: BingoCardProps) {
+export default function BingoCard({ numbers, markedCells, onMarkCell, cardIndex, cardToken }: BingoCardProps) {
   const getCellKey = (row: number, col: number) => `${cardIndex}-${row}-${col}`
 
   const handleCellClick = (row: number, col: number) => {
@@ -94,7 +95,10 @@ export default function BingoCard({ numbers, markedCells, onMarkCell, cardIndex 
       </div>
 
           {/* Card Footer */}
-          <div className="px-4 pb-4 text-center text-xs text-muted-foreground">Click numbers to mark them</div>
+          <div className="px-4 pb-4 text-center">
+            <div className="text-xs text-muted-foreground mb-2">Click numbers to mark them</div>
+            <div className="text-xs font-mono text-primary/80 break-all">Token: {cardToken}</div>
+          </div>
         </Card>
       </ShineBorder>
     </motion.div>
